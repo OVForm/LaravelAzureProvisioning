@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use RobTrehy\LaravelAzureProvisioning\Events\AzureResourceCreated;
+use RobTrehy\LaravelAzureProvisioning\Events\AzureResourceDeleted;
+use RobTrehy\LaravelAzureProvisioning\Events\AzureResourceUpdated;
 use RobTrehy\LaravelAzureProvisioning\Exceptions\AzureProvisioningException;
 use RobTrehy\LaravelAzureProvisioning\Resources\ResourceType;
 use RobTrehy\LaravelAzureProvisioning\SCIM\ListResponse;
@@ -21,7 +24,7 @@ class ResourceController extends Controller
     {
         $resourceObject = $this->createObject($request, $resourceType);
 
-        // event(new Create($resourceObject, $resourceType));
+        event(new AzureResourceCreated($request, $resourceType, $resourceObject));
 
         return AzureHelper::objectToSCIMCreateResponse($resourceObject, $resourceType);
     }
@@ -42,7 +45,7 @@ class ResourceController extends Controller
     {
         $resourceObject->delete();
 
-        // event(new Delete($resourceObject, $resourceType));
+        event(new AzureResourceDeleted($request, $resourceType, $resourceObject));
 
         return response(null, 204);
     }
@@ -76,7 +79,7 @@ class ResourceController extends Controller
             $resourceObject = $resourceType->patch($operation, $resourceObject);
         }
 
-        // event(new Patch($resourceObject, $oldObject, $resourceType));
+        event(new AzureResourceUpdated($request, $resourceType, $resourceObject));
 
         return AzureHelper::objectToSCIMResponse($resourceObject, $resourceType);
     }
@@ -92,7 +95,7 @@ class ResourceController extends Controller
         $validatedInput = $this->validateSCIM($resourceType, $request->input(), $resourceObject);
         $resourceObject = $resourceType->replaceFromSCIM($validatedInput, $resourceObject);
 
-        // event(new Replace($resourceObject, $oldObject, $resourceType));
+        event(new AzureResourceUpdated($request, $resourceType, $resourceObject));
 
         return AzureHelper::objectToSCIMResponse($resourceObject, $resourceType);
     }
@@ -107,7 +110,8 @@ class ResourceController extends Controller
         // A value of "0" indicates that no resource results are to be returned except for "totalResults".
         $count = max(0, intVal($request->input('count', 10)));
 
-        $sortBy = is_null($request->input('sortby')) ? ''
+        $sortBy = is_null($request->input('sortby')) 
+                    ? null
                     : $resourceType->getMappingForAttribute($request->input('sortby')) ;
 
         $resourceObjectBase = $model::when(
@@ -130,7 +134,7 @@ class ResourceController extends Controller
         $resourceObjects = $resourceObjectBase->skip($startIndex - 1)->take($count);
         $resourceObjects = $resourceObjects->with(config('azureprovisioning.'.$resourceType->getName().'.relations'));
 
-        if ($sortBy != null) {
+        if ($sortBy !== null) {
             $direction = $request->input('sortorder') == 'descending' ? 'desc' : 'asc';
             $resourceObjects = $resourceObjects->orderBy($sortBy, $direction);
         }
