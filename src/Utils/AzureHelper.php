@@ -34,7 +34,9 @@ class AzureHelper
             $attribute = $node->attributePath->attributeNames[0];
             $mapping = $resourceType->getMappingForAttribute($attribute);
 
-            self::applyWhereConditionToQuery($mapping, $query, $operator, $node->compareValue);
+            if ($mapping !== null) {
+                self::applyWhereConditionToQuery($mapping, $query, $operator, $node->compareValue);
+            }
         } elseif ($node instanceof Conjunction) {
             foreach ($node->getFactors() as $factor) {
                 $query->where(

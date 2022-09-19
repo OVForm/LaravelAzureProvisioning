@@ -65,7 +65,7 @@ class GroupsResourceType extends ResourceType
                 $value = $scimValue;
             }
 
-            if ($map <> null) {
+            if ($map !== null) {
                 if (is_array($map)) {
                     foreach ($map as $key => $attribute) {
                         $group->{$attribute} = $value[$key];
@@ -108,11 +108,15 @@ class GroupsResourceType extends ResourceType
             case "replace":
                 if (isset($operation['path'])) {
                     $attribute = $this->getMappingForAttribute($operation['path']);
-                    $object->{$attribute} = $operation['value'];
+                    if ($attribute !== null) {
+                        $object->{$attribute} = $operation['value'];
+                    }
                 } else {
                     foreach ($operation['value'] as $key => $value) {
                         $attribute = $this->getMappingForAttribute($key);
-                        $object->{$attribute} = $value;
+                        if ($attribute !== null) {
+                            $object->{$attribute} = $value;
+                        }
                     }
                 }
                 break;

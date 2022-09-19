@@ -57,7 +57,7 @@ class ResourceType
             return $mapping[$attribute];
         }
 
-        throw (new AzureProvisioningException(sprintf("Attribute \"%s\" is not valid", $attribute)))->setCode(400);
+        return null;
     }
 
     public function getMappingForArrayAttribute($attribute, $scimArray)

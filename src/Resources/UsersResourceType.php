@@ -27,7 +27,7 @@ class UsersResourceType extends ResourceType
                 $value = $scimValue;
             }
 
-            if ($map <> null) {
+            if ($map !== null) {
                 if (is_array($map)) {
                     foreach ($map as $key => $attribute) {
                         if ($key !== "password") {
@@ -47,7 +47,7 @@ class UsersResourceType extends ResourceType
 
             foreach ($this->getDefaults() as $key => $value) {
                 if (!array_key_exists($key, $data)) {
-                    if ($key <> 'password') {
+                    if ($key !== 'password') {
                         $data[$key] = $value;
                     } else {
                         $data[$key] = Hash::make($value);
@@ -92,7 +92,7 @@ class UsersResourceType extends ResourceType
                 $value = $scimValue;
             }
 
-            if ($map <> null) {
+            if ($map !== null) {
                 if (is_array($map)) {
                     foreach ($map as $key => $attribute) {
                         if ($key !== "password") {
@@ -125,9 +125,9 @@ class UsersResourceType extends ResourceType
         }
 
         foreach ($allAttributes as $scimAttribute => $attribute) {
-            if ($attribute <> 'id' && !is_null($attribute)) {
+            if ($attribute !== 'id' && !is_null($attribute)) {
                 // Set all others to default value
-                if ($attribute <> 'password') {
+                if ($attribute !== 'password') {
                     $object->{$attribute} = $this->getDefaultValueForAttribute($attribute);
                 } else {
                     $object->{$attribute} = Hash::make($this->getDefaultValueForAttribute($attribute));
@@ -146,14 +146,18 @@ class UsersResourceType extends ResourceType
             case "add":
                 if (isset($operation['path'])) {
                     $attribute = $this->getMappingForAttribute($operation['path']);
-                    foreach ($operation['value'] as $value) {
-                        $object->{$attribute}->add($value);
+                    if ($attribute !== null) {
+                        foreach (is_array($operation['value']) ? $operation['value'] : [$operation['value']] as $value) {
+                            $object->setAttribute($attribute, $value);
+                        }
                     }
                 } else {
                     foreach ($operation['value'] as $key => $value) {
                         $attribute = $this->getMappingForAttribute($key);
-                        foreach ($value as $v) {
-                            $object->{$attribute}->add($v);
+                        if ($attribute !== null) {
+                            foreach ($value as $v) {
+                                $object->setAttribute($attribute, $value);
+                            }
                         }
                     }
                 }
@@ -161,7 +165,9 @@ class UsersResourceType extends ResourceType
             case "remove":
                 if (isset($operation['path'])) {
                     $attribute = $this->getMappingForAttribute($operation['path']);
-                    $object->{$attribute}->remove();
+                    if ($attribute !== null) {
+                        $object->setAttribute($attribute, null);
+                    }
                 } else {
                     throw new AzureProvisioningException("You must provide a \"Path\"");
                 }
@@ -169,18 +175,22 @@ class UsersResourceType extends ResourceType
             case "replace":
                 if (isset($operation['path'])) {
                     $attribute = $this->getMappingForAttribute($operation['path']);
-                    if ($attribute === "active") {
-                        $object->{$attribute} = ($operation['value'] === true) ? '1' : '0';
-                    } else {
-                        $object->{$attribute} = $operation['value'];
+                    if ($attribute !== null) {
+                        if ($attribute === "active") {
+                            $object->{$attribute} = ($operation['value'] === true || $operation['value'] === "True") ? '1' : '0';
+                        } else {
+                            $object->{$attribute} = $operation['value'];
+                        }
                     }
                 } else {
                     foreach ($operation['value'] as $key => $value) {
                         $attribute = $this->getMappingForAttribute($key);
-                        if ($attribute === "active") {
-                            $object->{$attribute} = ($value === true) ? '1' : '0';
-                        } else {
-                            $object->{$attribute} = $value;
+                        if ($attribute !== null) {
+                            if ($attribute === "active") {
+                                $object->{$attribute} = ($value === true || $value === "True") ? '1' : '0';
+                            } else {
+                                $object->{$attribute} = $value;
+                            }
                         }
                     }
                 }
