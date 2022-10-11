@@ -4,6 +4,7 @@ namespace RobTrehy\LaravelAzureProvisioning\Resources;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Hash;
 use RobTrehy\LaravelAzureProvisioning\Exceptions\AzureProvisioningException;
 
 class GroupsResourceType extends ResourceType
@@ -17,17 +18,63 @@ class GroupsResourceType extends ResourceType
         $model = $this->getModel();
         $name = ($validatedData['displayname']) ?: null;
 
+        $data = [];
+
+        foreach ($validatedData as $scimAttribute => $scimValue) {
+            if (is_array($scimValue)) {
+                $array = $this->getMappingForArrayAttribute($scimAttribute, $scimValue);
+                $map = $array[0];
+                $value = $array[1];
+            } else {
+                $map = $this->getMappingForAttribute($scimAttribute);
+                $value = $scimValue;
+            }
+
+            if ($map !== null) {
+                if (is_array($map)) {
+                    foreach ($map as $key => $attribute) {
+                        if ($key !== "password") {
+                            $data[$attribute] = $value[$key];
+                        } else {
+                            $data[$attribute] = Hash::make($value[$key]);
+                        }
+                    }
+                } else {
+                    if ($map !== "password") {
+                        $data[$map] = $scimValue;
+                    } else {
+                        $data[$map] = Hash::make($scimValue);
+                    }
+                }
+            }
+
+            foreach ($this->getDefaults() as $key => $value) {
+                if (!array_key_exists($key, $data)) {
+                    if ($key !== 'password') {
+                        $data[$key] = $value;
+                    } else {
+                        $data[$key] = Hash::make($value);
+                    }
+                }
+            }
+        }
+
+
         if ($name === null) {
             // TODO: Make this the correct exception message and code
             throw (new AzureProvisioningException("name not provided"));
         }
 
         try {
-            $model::findOrCreate($name);
+            $resource = $model::firstOrNew(['name' => $name]);
         } catch (QueryException $exception) {
             // TODO: Handle this better
             throw $exception;
         }
+
+        $resource->fill($data);
+
+        $resource->save();
 
         if (isset($validatedData['members'])) {
             foreach ($validatedData['members'] as $member) {
@@ -40,7 +87,7 @@ class GroupsResourceType extends ResourceType
             }
         }
 
-        return $model::findByName($name);
+        return $resource;
     }
 
     public function replaceFromSCIM(array $validatedData, Model $group)
@@ -142,6 +189,8 @@ class GroupsResourceType extends ResourceType
 
             if (method_exists($user, $method)) {
                 call_user_func([$user, $method], $groupName);
+
+                
             }
         }
     }
