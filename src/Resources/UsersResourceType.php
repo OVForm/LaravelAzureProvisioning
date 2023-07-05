@@ -57,7 +57,15 @@ class UsersResourceType extends ResourceType
         }
 
         try {
-            $resourceObject = $model::create($data);
+            // retrieve the user if already existing
+            $user = $model::where('email', $data['email'])->first();
+            if ($user) {
+                $user->fill($data);
+                $user->save();
+                $resourceObject = $user;
+            } else {
+                $resourceObject = $model::create($data);
+            }
         } catch (QueryException $exception) {
             if ($exception->getPrevious()->errorInfo[1] === 1062) {
                 throw (new AzureProvisioningException("User already exists"))->setCode(409);
