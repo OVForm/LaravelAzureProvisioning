@@ -58,8 +58,10 @@ class AzureProvisioningProvider extends ServiceProvider
                     throw (new AzureProvisioningException('ResourceType not provided'))->setCode(404);
                 }
 
+                $primaryKeyName = config("azureprovisioning.{$resourceType->getName()}.primaryKey") ?? "id";
+
                 $model = $resourceType->getModel();
-                $resourceObject = $model::find($id);
+                $resourceObject = $model::where($primaryKeyName, (string)$id)->first();
 
                 if ($resourceObject === null) {
                     throw (new AzureProvisioningException(sprintf('Resource %s not found', $id)))->setCode(404);
