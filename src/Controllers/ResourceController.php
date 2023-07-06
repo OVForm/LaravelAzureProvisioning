@@ -5,6 +5,7 @@ namespace RobTrehy\LaravelAzureProvisioning\Controllers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use RobTrehy\LaravelAzureProvisioning\Events\AzureResourceCreated;
 use RobTrehy\LaravelAzureProvisioning\Events\AzureResourceDeleted;
@@ -22,6 +23,10 @@ class ResourceController extends Controller
 {
     public function create(Request $request, ResourceType $resourceType)
     {
+        if (config('azureprovisioning.debug')) {
+            Log::info('AzureProvisioning: create ' . $request->fullUrl() . "\n" . json_encode($request->all()));
+        }
+
         $resourceObject = $this->createObject($request, $resourceType);
 
         event(new AzureResourceCreated($request, $resourceType, $resourceObject));
@@ -43,6 +48,10 @@ class ResourceController extends Controller
 
     public function delete(Request $request, ResourceType $resourceType, Model $resourceObject)
     {
+        if (config('azureprovisioning.debug')) {
+            Log::info('AzureProvisioning: delete ' . $resourceType->fullUrl() . "\n" . json_encode($request->all()));
+        }
+
         $resourceObject->delete();
 
         event(new AzureResourceDeleted($request, $resourceType, $resourceObject));
@@ -52,6 +61,10 @@ class ResourceController extends Controller
 
     public function update(Request $request, ResourceType $resourceType, Model $resourceObject)
     {
+        if (config('azureprovisioning.debug')) {
+            Log::info('AzureProvisioning: update ' . $resourceType->fullUrl() . "\n" . json_encode($request->all()));
+        }
+
         $input = $request->input();
 
         if (!self::isAllowed($request, 'PATCH', $input, $resourceType, $resourceObject)) {
@@ -86,6 +99,10 @@ class ResourceController extends Controller
 
     public function replace(Request $request, ResourceType $resourceType, Model $resourceObject, $isMe = false)
     {
+        if (config('azureprovisioning.debug')) {
+            Log::info('AzureProvisioning: replace ' . $resourceType->fullUrl() . "\n" . json_encode($request->all()));
+        }
+
         if (!self::isAllowed($request, 'PUT', $request->input(), $resourceType, null)) {
             throw new AzureProvisioningException('This is not allowed');
         }
@@ -110,7 +127,7 @@ class ResourceController extends Controller
         // A value of "0" indicates that no resource results are to be returned except for "totalResults".
         $count = max(0, intVal($request->input('count', 10)));
 
-        $sortBy = is_null($request->input('sortby')) 
+        $sortBy = is_null($request->input('sortby'))
                     ? null
                     : $resourceType->getMappingForAttribute($request->input('sortby')) ;
 
