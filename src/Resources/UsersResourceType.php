@@ -58,8 +58,10 @@ class UsersResourceType extends ResourceType
 
         try {
             // retrieve the user if already existing
-            $user = $model::where('email', $data['email'])->first();
+            $user = $model::query()->withoutGlobalScopes()->withTrashed()->where('email', $data['email'])->first();
+
             if ($user) {
+                $user->deleted_at = null;
                 $user->fill($data);
                 $user->save();
                 $resourceObject = $user;
