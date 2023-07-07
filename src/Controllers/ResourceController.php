@@ -49,7 +49,7 @@ class ResourceController extends Controller
     public function delete(Request $request, ResourceType $resourceType, Model $resourceObject)
     {
         if (config('azureprovisioning.debug')) {
-            Log::info('AzureProvisioning: delete ' . $resourceType->fullUrl() . "\n" . json_encode($request->all()));
+            Log::info('AzureProvisioning: delete ' . $request->fullUrl() . "\n" . json_encode($request->all()));
         }
 
         $resourceObject->delete();
@@ -62,7 +62,7 @@ class ResourceController extends Controller
     public function update(Request $request, ResourceType $resourceType, Model $resourceObject)
     {
         if (config('azureprovisioning.debug')) {
-            Log::info('AzureProvisioning: update ' . $resourceType->fullUrl() . "\n" . json_encode($request->all()));
+            Log::info('AzureProvisioning: update ' . $request->fullUrl() . "\n" . json_encode($request->all()));
         }
 
         $input = $request->input();
@@ -100,7 +100,7 @@ class ResourceController extends Controller
     public function replace(Request $request, ResourceType $resourceType, Model $resourceObject, $isMe = false)
     {
         if (config('azureprovisioning.debug')) {
-            Log::info('AzureProvisioning: replace ' . $resourceType->fullUrl() . "\n" . json_encode($request->all()));
+            Log::info('AzureProvisioning: replace ' . $request->fullUrl() . "\n" . json_encode($request->all()));
         }
 
         if (!self::isAllowed($request, 'PUT', $request->input(), $resourceType, null)) {
