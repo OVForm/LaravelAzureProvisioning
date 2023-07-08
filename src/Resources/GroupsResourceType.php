@@ -184,13 +184,15 @@ class GroupsResourceType extends ResourceType
     private function addMembers($members, $groupName)
     {
         foreach ($members as $member) {
-            $user = $this->user()->getModel()::find($member['value']);
+
+            $primaryKeyName = config("azureprovisioning.Users.primaryKey") ?? "id";
+
+            $user = $this->user()->getModel()::where($primaryKeyName, (string)$member['value'])->first();
+
             $method = $this->getMemberMappingMethod()[0];
 
-            if (method_exists($user, $method)) {
+            if ($user && method_exists($user, $method)) {
                 call_user_func([$user, $method], $groupName);
-
-                
             }
         }
     }
@@ -198,11 +200,14 @@ class GroupsResourceType extends ResourceType
     private function removeMembers($members, $groupName)
     {
         foreach ($members as $member) {
-            $id = ($member['value']) ?: $member->id;
-            $user = $this->user()->getModel()::find($id);
-            $method = $this->getMemberMappingMethod()[1];
+            $primaryKeyName = config("azureprovisioning.Users.primaryKey") ?? "id";
 
-            if (method_exists($user, $method)) {
+            $user = $this->user()->getModel()::where($primaryKeyName, (string)$member['value'])->first();
+
+            $method = $this->getMemberMappingMethod()[0];
+
+
+            if ($user && method_exists($user, $method)) {
                 call_user_func([$user, $method], $groupName);
             }
         }

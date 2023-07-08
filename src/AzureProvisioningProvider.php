@@ -59,7 +59,6 @@ class AzureProvisioningProvider extends ServiceProvider
                 }
 
                 $primaryKeyName = config("azureprovisioning.{$resourceType->getName()}.primaryKey") ?? "id";
-
                 $model = $resourceType->getModel();
                 $resourceObject = $model::where($primaryKeyName, (string)$id)->first();
 
