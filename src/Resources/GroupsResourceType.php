@@ -95,10 +95,10 @@ class GroupsResourceType extends ResourceType
         $groupModel = $this->getModel();
 
         // Remove all members
-        $this->removeMembers($group->users, $group->name);
+        $this->removeMembers($group->users, $group->id);
 
         if (isset($validatedData['members'])) {
-            $this->addMembers($validatedData['members'], $group->name);
+            $this->addMembers($validatedData['members'], $group->id);
             unset($validatedData['members']);
         }
 
@@ -125,7 +125,7 @@ class GroupsResourceType extends ResourceType
 
         $group->save();
 
-        return $groupModel::findByName($group->name);
+        return $groupModel::find($group->id);
     }
 
     public function patch(array $operation, Model $object)
@@ -133,7 +133,7 @@ class GroupsResourceType extends ResourceType
         switch (strtolower($operation['op'])) {
             case "add":
                 if ($operation['path'] === "members" && is_array($operation['value'])) {
-                    $this->addMembers($operation['value'], $object->name);
+                    $this->addMembers($operation['value'], $object->id);
                 } else {
                     // This passes MS tests but is very incorrect. An exception should not return a 2xx status code
                     throw (new AzureProvisioningException("Operations value is incorrectly formatted"))->setCode(204);
@@ -143,9 +143,9 @@ class GroupsResourceType extends ResourceType
                 if (isset($operation['path'])) {
                     if ($operation['path'] === "members") {
                         if (isset($operation['value'])) {
-                            $this->removeMembers($operation['value'], $object->name);
+                            $this->removeMembers($operation['value'], $object->id);
                         } else {
-                            $this->removeMembers($object->users, $object->name);
+                            $this->removeMembers($object->users, $object->id);
                         }
                     }
                 } else {
@@ -173,7 +173,7 @@ class GroupsResourceType extends ResourceType
 
         $object->save();
 
-        return $this->getModel()::findByName($object->name);
+        return $this->getModel()::find($object->id);
     }
 
     public function getMemberMappingMethod()
